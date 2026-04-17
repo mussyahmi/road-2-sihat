@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
+import { createPortal } from "react-dom";
 import { Download, X, Share } from "lucide-react";
 
 interface BeforeInstallPromptEvent extends Event {
@@ -70,9 +71,9 @@ export function PWAInstallButton() {
         <span>Install</span>
       </button>
 
-      {showIOSModal && (
+      {showIOSModal && createPortal(
         <div
-          className="fixed inset-0 z-[100] flex items-end justify-center p-4 sm:items-center"
+          className="fixed inset-0 z-[200] flex items-end justify-center p-4 sm:items-center"
           onClick={() => setShowIOSModal(false)}
         >
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
@@ -130,7 +131,8 @@ export function PWAInstallButton() {
               </li>
             </ol>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </>
   );
