@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useAuth } from "@/contexts/auth-context";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { PWAInstallButton } from "@/components/pwa-install";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   DropdownMenu,
@@ -25,11 +26,12 @@ export function Navbar() {
           <div className="flex h-7 w-7 items-center justify-center rounded-lg border border-primary/25 bg-primary/10 transition-colors group-hover:bg-primary/15">
             <Activity className="h-4 w-4 text-primary" />
           </div>
-          <span className="font-semibold text-sm tracking-tight">Road 2 Sihat</span>
+          <span className="font-semibold text-sm tracking-tight">Road2Sihat</span>
           <span className="font-data text-[10px] text-muted-foreground/50">v{version}</span>
         </Link>
 
         <div className="flex items-center gap-1">
+          <PWAInstallButton />
           <ThemeToggle />
 
           <DropdownMenu>

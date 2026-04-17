@@ -64,7 +64,7 @@ export default function SignInPage() {
               </div>
             </div>
             <div>
-              <h1 className="text-[2rem] font-bold tracking-tight leading-none">Road 2 Sihat</h1>
+              <h1 className="text-[2rem] font-bold tracking-tight leading-none">Road2Sihat</h1>
               <p className="mt-2.5 text-sm text-muted-foreground leading-relaxed">
                 Precision body composition tracking.<br />
                 Your data, your progress.
