@@ -5,11 +5,11 @@ import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { getMeasurements, updateMeasurement, deleteMeasurement } from "@/lib/firestore";
 import { Measurement } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Save, Loader2, Trash2 } from "lucide-react";
 import Link from "next/link";
+import { inputClass } from "@/lib/styles";
 
 type FormData = Omit<Measurement, "id">;
 
@@ -97,122 +97,117 @@ function EditForm() {
 
   return (
     <>
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Date */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              Date & Time
-              <Badge variant="secondary" className="text-xs">Required</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <input
-              type="datetime-local"
-              value={form.date}
-              onChange={(e) => set("date", e.target.value)}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-              required
-            />
-          </CardContent>
-        </Card>
+      <form onSubmit={handleSubmit} className="space-y-5">
 
-        {/* Metrics */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Body Metrics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              {FIELDS.map((field) => (
-                <div key={field.key} className="space-y-1">
-                  <label className="text-xs text-muted-foreground">
-                    {field.label}
-                    {field.unit && <span className="ml-1 text-xs">({field.unit})</span>}
-                  </label>
-                  <input
-                    type="number"
-                    step={field.step}
-                    min={0}
-                    value={form[field.key] as number}
-                    onChange={(e) => set(field.key, parseFloat(e.target.value) || 0)}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <section className="space-y-2">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Date &amp; Time</h2>
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">Required</Badge>
+          </div>
+          <input
+            type="datetime-local"
+            value={form.date}
+            onChange={(e) => set("date", e.target.value)}
+            className={inputClass}
+            required
+          />
+        </section>
 
-        {/* Notes */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Notes (optional)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <textarea
-              value={form.notes ?? ""}
-              onChange={(e) => set("notes", e.target.value)}
-              placeholder="e.g. After morning workout, fasted..."
-              rows={3}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-            />
-          </CardContent>
-        </Card>
+        <div className="border-t border-border/40" />
 
-        <Button type="submit" className="w-full" disabled={saving || deleting}>
+        <section className="space-y-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Body Metrics</h2>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-3">
+            {FIELDS.map((field) => (
+              <div key={field.key} className="space-y-1.5">
+                <label className="text-xs text-muted-foreground font-medium">
+                  {field.label}
+                  {field.unit && <span className="ml-1 opacity-60">({field.unit})</span>}
+                </label>
+                <input
+                  type="number"
+                  step={field.step}
+                  min={0}
+                  value={form[field.key] as number}
+                  onChange={(e) => set(field.key, parseFloat(e.target.value) || 0)}
+                  className={inputClass}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <div className="border-t border-border/40" />
+
+        <section className="space-y-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notes</h2>
+          <textarea
+            value={form.notes ?? ""}
+            onChange={(e) => set("notes", e.target.value)}
+            placeholder="e.g. After morning workout, fasted..."
+            rows={3}
+            className={`${inputClass} resize-none font-sans`}
+          />
+        </section>
+
+        <Button type="submit" className="w-full h-11 gap-2 font-semibold" disabled={saving || deleting}>
           {saving ? (
             <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
               Saving...
             </>
           ) : (
             <>
-              <Save className="h-4 w-4 mr-2" />
+              <Save className="h-4 w-4" />
               Save Changes
             </>
           )}
         </Button>
       </form>
 
-      {/* Delete */}
-      <Button
-        type="button"
-        variant={confirmDelete ? "destructive" : "outline"}
-        className="w-full gap-2"
-        onClick={handleDelete}
-        disabled={saving || deleting}
-      >
-        {deleting ? (
-          <Loader2 className="h-4 w-4 animate-spin" />
-        ) : (
-          <Trash2 className="h-4 w-4" />
-        )}
-        {deleting ? "Deleting..." : confirmDelete ? "Tap again to confirm delete" : "Delete Entry"}
-      </Button>
+      <div className="space-y-2 pt-1">
+        <Button
+          type="button"
+          variant={confirmDelete ? "destructive" : "outline"}
+          className="w-full h-10 gap-2 text-sm"
+          onClick={handleDelete}
+          disabled={saving || deleting}
+        >
+          {deleting ? (
+            <Loader2 className="h-4 w-4 animate-spin" />
+          ) : (
+            <Trash2 className="h-4 w-4" />
+          )}
+          {deleting ? "Deleting..." : confirmDelete ? "Tap again to confirm delete" : "Delete Entry"}
+        </Button>
 
-      {confirmDelete && !deleting && (
-        <p className="text-xs text-center text-muted-foreground -mt-2">
-          This will permanently remove this measurement.{" "}
-          <button type="button" className="underline" onClick={() => setConfirmDelete(false)}>
-            Cancel
-          </button>
-        </p>
-      )}
+        {confirmDelete && !deleting && (
+          <p className="text-xs text-center text-muted-foreground">
+            This will permanently remove this measurement.{" "}
+            <button
+              type="button"
+              className="underline underline-offset-2 hover:text-foreground transition-colors"
+              onClick={() => setConfirmDelete(false)}
+            >
+              Cancel
+            </button>
+          </p>
+        )}
+      </div>
     </>
   );
 }
 
 export default function EditPage() {
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
+    <div className="max-w-2xl mx-auto space-y-5">
       <div className="flex items-center gap-3">
-        <Link href="/dashboard" className={buttonVariants({ variant: "ghost", size: "icon" })}>
+        <Link href="/dashboard" className={buttonVariants({ variant: "ghost", size: "icon" }) + " h-8 w-8"}>
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">Edit Measurement</h1>
-          <p className="text-sm text-muted-foreground">Update or delete this entry</p>
+          <h1 className="text-lg font-bold tracking-tight">Edit Measurement</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Update or remove this entry</p>
         </div>
       </div>
       <Suspense fallback={

@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { addMeasurement } from "@/lib/firestore";
 import { Measurement } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Save, Loader2, Sparkles, Copy, Check, ChevronDown, ChevronUp, ClipboardPaste } from "lucide-react";
 import Link from "next/link";
+import { inputClass } from "@/lib/styles";
 
 const AI_PROMPT = `Extract the body composition data from this scale screenshot and return ONLY a valid JSON object — no explanation, no markdown, no code block.
 
@@ -173,7 +173,6 @@ export default function AddPage() {
     if (!user) return;
     setSaving(true);
     try {
-      // Convert date to full ISO string
       const dateStr = form.date.length === 16 ? `${form.date}:00` : form.date;
       await addMeasurement(user.uid, { ...form, date: dateStr });
       router.push("/dashboard");
@@ -185,157 +184,151 @@ export default function AddPage() {
   };
 
   return (
-    <div className="max-w-2xl mx-auto space-y-4">
+    <div className="max-w-2xl mx-auto space-y-5">
+
       <div className="flex items-center gap-3">
-        <Link href="/dashboard" className={buttonVariants({ variant: "ghost", size: "icon" })}>
+        <Link href="/dashboard" className={buttonVariants({ variant: "ghost", size: "icon" }) + " h-8 w-8"}>
           <ArrowLeft className="h-4 w-4" />
         </Link>
         <div>
-          <h1 className="text-2xl font-bold">Add Measurement</h1>
-          <p className="text-sm text-muted-foreground">Key in your body composition data manually</p>
+          <h1 className="text-lg font-bold tracking-tight">Add Measurement</h1>
+          <p className="text-xs text-muted-foreground mt-0.5">Log your body composition data</p>
         </div>
       </div>
 
-      {/* AI Import */}
-      <Card className="border-dashed">
-        <CardHeader className="pb-3">
-          <button
-            type="button"
-            onClick={() => setAiOpen((o) => !o)}
-            className="flex items-center justify-between w-full text-left"
-          >
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              <Sparkles className="h-4 w-4 text-purple-500" />
-              Import via AI
-              <Badge variant="secondary" className="text-xs">Optional</Badge>
-            </CardTitle>
-            {aiOpen ? <ChevronUp className="h-4 w-4 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
-          </button>
-        </CardHeader>
+      <div className="rounded-xl border border-dashed border-border/60 bg-muted/20">
+        <button
+          type="button"
+          onClick={() => setAiOpen((o) => !o)}
+          className="flex items-center justify-between w-full px-4 py-3 text-left rounded-xl hover:bg-muted/20 transition-colors"
+        >
+          <span className="flex items-center gap-2 text-sm font-medium">
+            <Sparkles className="h-4 w-4 text-primary" />
+            Import via AI
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">Optional</Badge>
+          </span>
+          {aiOpen
+            ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
+            : <ChevronDown className="h-4 w-4 text-muted-foreground" />}
+        </button>
+
         {aiOpen && (
-          <CardContent className="space-y-3">
+          <div className="px-4 pb-4 space-y-3 border-t border-border/40 pt-3">
             <p className="text-xs text-muted-foreground">
-              Copy the prompt below, paste it into Claude or ChatGPT along with your scale screenshot, then paste the JSON response here.
+              Copy the prompt, paste into Claude or ChatGPT with your scale screenshot, then paste the JSON response below.
             </p>
-            <Button type="button" variant="outline" size="sm" onClick={copyPrompt} className="w-full gap-2">
-              {copied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+            <Button type="button" variant="outline" size="sm" onClick={copyPrompt} className="w-full gap-2 h-8 text-xs">
+              {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
               {copied ? "Prompt copied!" : "Copy AI prompt"}
             </Button>
-            <div className="space-y-1">
-              <label className="text-xs text-muted-foreground">Paste JSON response here</label>
+            <div className="space-y-1.5">
+              <label className="text-xs text-muted-foreground">Paste JSON response</label>
               <textarea
                 value={jsonInput}
                 onChange={(e) => { setJsonInput(e.target.value); setJsonError(""); setApplied(false); }}
                 placeholder={'{\n  "date": "2026-04-17T07:11:00",\n  "weight": 69.05,\n  ...\n}'}
-                rows={6}
-                className="w-full rounded-md border border-input bg-background px-3 py-2 text-xs font-mono ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
+                rows={5}
+                className={`${inputClass} font-mono text-xs resize-none`}
               />
-              {jsonError && <p className="text-xs text-red-500">{jsonError}</p>}
+              {jsonError && <p className="text-xs text-red-400">{jsonError}</p>}
             </div>
             <Button
               type="button"
               size="sm"
-              className="w-full gap-2"
+              className="w-full gap-2 h-8 text-xs"
               onClick={applyJson}
               disabled={!jsonInput.trim()}
             >
-              <ClipboardPaste className="h-4 w-4" />
+              <ClipboardPaste className="h-3.5 w-3.5" />
               Apply to form
             </Button>
-          </CardContent>
+          </div>
         )}
-      </Card>
+      </div>
 
       {applied && (
-        <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-400 px-1">
-          <Check className="h-4 w-4" />
-          Form filled from AI response — review and save.
+        <div className="flex items-center gap-2 text-xs text-emerald-400 px-1">
+          <Check className="h-3.5 w-3.5" />
+          Form filled from AI — review and save
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="space-y-4">
-        {/* Date */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium flex items-center gap-2">
-              Date & Time
-              <Badge variant="secondary" className="text-xs">Required</Badge>
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex gap-3">
+      <form onSubmit={handleSubmit} className="space-y-5">
+
+        <section className="space-y-2">
+          <div className="flex items-center gap-2">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Date &amp; Time</h2>
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">Required</Badge>
+          </div>
+          <div className="flex gap-2.5">
             <input
               type="date"
               value={dateInput}
               onChange={(e) => setDate(e.target.value)}
-              className="flex-1 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+              className={`${inputClass} flex-1`}
               required
             />
             <input
               type="time"
               value={timeInput}
               onChange={(e) => setTime(e.target.value)}
-              className="w-32 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
+              className={`${inputClass} w-32`}
               required
             />
-          </CardContent>
-        </Card>
+          </div>
+        </section>
 
-        {/* Metrics */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Body Metrics</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid grid-cols-2 gap-3">
-              {FIELDS.map((field) => (
-                <div key={field.key} className="space-y-1">
-                  <label className="text-xs text-muted-foreground">
-                    {field.label}
-                    {field.unit && <span className="ml-1 text-xs">({field.unit})</span>}
-                  </label>
-                  <input
-                    type="number"
-                    step={field.step}
-                    min={0}
-                    value={form[field.key] as number}
-                    onChange={(e) => set(field.key, parseFloat(e.target.value) || 0)}
-                    className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring"
-                  />
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
+        <div className="border-t border-border/40" />
 
-        {/* Notes */}
-        <Card>
-          <CardHeader className="pb-3">
-            <CardTitle className="text-sm font-medium">Notes (optional)</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <textarea
-              value={form.notes}
-              onChange={(e) => set("notes", e.target.value)}
-              placeholder="e.g. After morning workout, fasted..."
-              rows={3}
-              className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-            />
-          </CardContent>
-        </Card>
+        <section className="space-y-3">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Body Metrics</h2>
+          <div className="grid grid-cols-2 gap-x-3 gap-y-3">
+            {FIELDS.map((field) => (
+              <div key={field.key} className="space-y-1.5">
+                <label className="text-xs text-muted-foreground font-medium">
+                  {field.label}
+                  {field.unit && <span className="ml-1 opacity-60">({field.unit})</span>}
+                </label>
+                <input
+                  type="number"
+                  step={field.step}
+                  min={0}
+                  value={form[field.key] as number}
+                  onChange={(e) => set(field.key, parseFloat(e.target.value) || 0)}
+                  className={inputClass}
+                />
+              </div>
+            ))}
+          </div>
+        </section>
 
-        <Button type="submit" className="w-full" disabled={saving}>
+        <div className="border-t border-border/40" />
+
+        <section className="space-y-2">
+          <h2 className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">Notes</h2>
+          <textarea
+            value={form.notes}
+            onChange={(e) => set("notes", e.target.value)}
+            placeholder="e.g. After morning workout, fasted..."
+            rows={3}
+            className={`${inputClass} resize-none font-sans`}
+          />
+        </section>
+
+        <Button type="submit" className="w-full h-11 gap-2 font-semibold" disabled={saving}>
           {saving ? (
             <>
-              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              <Loader2 className="h-4 w-4 animate-spin" />
               Saving...
             </>
           ) : (
             <>
-              <Save className="h-4 w-4 mr-2" />
+              <Save className="h-4 w-4" />
               Save Measurement
             </>
           )}
         </Button>
+
       </form>
     </div>
   );

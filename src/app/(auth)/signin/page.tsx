@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Activity } from "lucide-react";
 
 export default function SignInPage() {
@@ -19,35 +18,101 @@ export default function SignInPage() {
   }, [user, loading, router]);
 
   return (
-    <div className="min-h-screen flex flex-col">
-      <div className="flex justify-end p-4">
+    <div className="relative min-h-screen flex flex-col overflow-hidden bg-background">
+      {/* Ambient glow layers */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: `
+            radial-gradient(ellipse 65% 55% at 50% 38%, oklch(0.78 0.155 75 / 8%) 0%, transparent 70%),
+            radial-gradient(ellipse 45% 35% at 72% 70%, oklch(0.75 0.15 185 / 5%) 0%, transparent 60%),
+            radial-gradient(ellipse 35% 30% at 20% 60%, oklch(0.72 0.15 250 / 4%) 0%, transparent 55%)
+          `,
+        }}
+      />
+
+      {/* Subtle grid texture */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          backgroundImage: `linear-gradient(oklch(0.95 0 0 / 3%) 1px, transparent 1px), linear-gradient(90deg, oklch(0.95 0 0 / 3%) 1px, transparent 1px)`,
+          backgroundSize: "48px 48px",
+        }}
+      />
+
+      {/* Theme toggle */}
+      <div className="relative flex justify-end p-5">
         <ThemeToggle />
       </div>
 
-      <div className="flex flex-1 items-center justify-center px-4">
-        <Card className="w-full max-w-sm">
-          <CardHeader className="text-center space-y-3">
+      {/* Main content */}
+      <div className="relative flex flex-1 items-center justify-center px-4 pb-16">
+        <div className="w-full max-w-[340px] space-y-7">
+
+          {/* Brand mark */}
+          <div className="text-center space-y-5">
             <div className="flex justify-center">
-              <div className="flex h-12 w-12 items-center justify-center rounded-full bg-primary text-primary-foreground">
-                <Activity className="h-6 w-6" />
+              <div className="relative">
+                <div className="flex h-16 w-16 items-center justify-center rounded-2xl border border-primary/25 bg-primary/10">
+                  <Activity className="h-8 w-8 text-primary" />
+                </div>
+                {/* Ambient glow behind icon */}
+                <div
+                  className="absolute -inset-3 rounded-3xl pointer-events-none"
+                  style={{ background: "radial-gradient(circle, oklch(0.78 0.155 75 / 15%) 0%, transparent 70%)" }}
+                />
               </div>
             </div>
-            <CardTitle className="text-2xl">Road 2 Sihat</CardTitle>
-            <CardDescription>
-              Track your body composition and visualize your health journey
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
+            <div>
+              <h1 className="text-[2rem] font-bold tracking-tight leading-none">Road 2 Sihat</h1>
+              <p className="mt-2.5 text-sm text-muted-foreground leading-relaxed">
+                Precision body composition tracking.<br />
+                Your data, your progress.
+              </p>
+            </div>
+          </div>
+
+          {/* Sign-in card */}
+          <div className="rounded-xl border border-border/60 bg-card/80 backdrop-blur-sm p-6 space-y-5">
+            <div>
+              <p className="text-sm font-semibold tracking-tight">Sign in to continue</p>
+              <p className="text-xs text-muted-foreground mt-1 leading-relaxed">
+                Track weight, body fat, muscle mass, and 15+ metrics over time.
+              </p>
+            </div>
+
             <Button
-              className="w-full"
+              className="w-full h-11 text-sm font-medium gap-2.5"
               onClick={signInWithGoogle}
               disabled={loading}
             >
               <GoogleIcon />
               Continue with Google
             </Button>
-          </CardContent>
-        </Card>
+
+            <p className="text-center text-[11px] text-muted-foreground/70">
+              Data stored securely · only accessible to you
+            </p>
+          </div>
+
+          {/* Stats teasers */}
+          <div className="grid grid-cols-3 gap-2">
+            {[
+              { label: "Metrics", value: "18" },
+              { label: "Charts", value: "17+" },
+              { label: "History", value: "∞" },
+            ].map((item) => (
+              <div
+                key={item.label}
+                className="rounded-lg border border-border/40 bg-card/40 p-3 text-center"
+              >
+                <p className="font-data text-base font-bold text-primary">{item.value}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5 leading-tight">{item.label}</p>
+              </div>
+            ))}
+          </div>
+
+        </div>
       </div>
     </div>
   );
@@ -55,7 +120,7 @@ export default function SignInPage() {
 
 function GoogleIcon() {
   return (
-    <svg className="mr-2 h-4 w-4" viewBox="0 0 24 24">
+    <svg className="h-4 w-4 shrink-0" viewBox="0 0 24 24">
       <path
         d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
         fill="#4285F4"

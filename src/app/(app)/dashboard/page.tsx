@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { getMeasurements } from "@/lib/firestore";
 import { Measurement, METRIC_CONFIGS } from "@/lib/types";
@@ -20,7 +20,7 @@ export default function DashboardPage() {
   const [measurements, setMeasurements] = useState<Measurement[]>([]);
   const [loading, setLoading] = useState(true);
 
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     if (!user) return;
     setLoading(true);
     try {
@@ -29,31 +29,27 @@ export default function DashboardPage() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [user]);
 
   useEffect(() => {
     fetchData();
-  }, [user]);
+  }, [fetchData]);
 
   const latest = measurements[measurements.length - 1];
   const previous = measurements[measurements.length - 2];
+  const reversedMeasurements = useMemo(() => [...measurements].reverse(), [measurements]);
 
   if (loading) {
     return (
       <div className="space-y-6">
-        {/* Header */}
         <div className="flex items-center justify-between">
-          <div className="space-y-1.5">
-            <Skeleton className="h-8 w-36" />
-            <Skeleton className="h-4 w-52" />
+          <div className="space-y-2">
+            <Skeleton className="h-7 w-32" />
+            <Skeleton className="h-4 w-48" />
           </div>
-          <Skeleton className="h-9 w-9 rounded-md" />
+          <Skeleton className="h-8 w-8 rounded-md" />
         </div>
-
-        {/* Tabs bar */}
-        <Skeleton className="h-9 w-72 rounded-lg" />
-
-        {/* Weight overview chart card */}
+        <Skeleton className="h-9 w-64 rounded-lg" />
         <Card>
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between">
@@ -63,21 +59,14 @@ export default function DashboardPage() {
               </div>
               <div className="flex flex-col items-end gap-1.5">
                 <Skeleton className="h-9 w-24" />
-                <Skeleton className="h-4 w-20" />
+                <Skeleton className="h-4 w-16" />
               </div>
             </div>
           </CardHeader>
           <CardContent>
             <Skeleton className="h-[220px] w-full rounded-md" />
-            <div className="flex gap-4 mt-2">
-              <Skeleton className="h-3 w-16" />
-              <Skeleton className="h-3 w-16" />
-              <Skeleton className="h-3 w-12" />
-            </div>
           </CardContent>
         </Card>
-
-        {/* Latest stats grid — mirrors 2/3/4 col layout */}
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
           {Array.from({ length: 17 }).map((_, i) => (
             <Card key={i} className="p-3">
@@ -86,10 +75,7 @@ export default function DashboardPage() {
                   <Skeleton className="h-4 w-4 rounded-sm" />
                   <Skeleton className="h-3 w-20" />
                 </div>
-                <div className="flex items-end justify-between">
-                  <Skeleton className="h-7 w-16" />
-                  <Skeleton className="h-5 w-10 rounded-full" />
-                </div>
+                <Skeleton className="h-6 w-16" />
               </CardContent>
             </Card>
           ))}
@@ -100,9 +86,14 @@ export default function DashboardPage() {
 
   if (measurements.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center h-64 gap-4 text-center">
-        <p className="text-lg font-medium">No measurements yet</p>
-        <p className="text-muted-foreground text-sm">Add your first entry to start tracking your progress</p>
+      <div className="flex flex-col items-center justify-center min-h-[50vh] gap-5 text-center">
+        <div className="rounded-full border border-border/50 bg-muted/30 p-5">
+          <Plus className="h-8 w-8 text-muted-foreground" />
+        </div>
+        <div>
+          <p className="text-base font-semibold">No measurements yet</p>
+          <p className="text-sm text-muted-foreground mt-1">Add your first entry to start tracking progress</p>
+        </div>
         <Link href="/add" className={buttonVariants()}>
           <Plus className="h-4 w-4 mr-2" />
           Add First Entry
@@ -112,37 +103,38 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <div className="space-y-5">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold">Dashboard</h1>
-          <p className="text-sm text-muted-foreground">
-            Last updated: {latest ? format(parseISO(latest.date), "dd MMM yyyy, HH:mm") : "—"}
+          <h1 className="text-xl font-bold tracking-tight">Dashboard</h1>
+          <p className="text-xs text-muted-foreground mt-0.5 font-data">
+            {latest ? format(parseISO(latest.date), "dd MMM yyyy · HH:mm") : "—"}
           </p>
         </div>
-        <Button variant="outline" size="icon" onClick={fetchData}>
-          <RefreshCw className="h-4 w-4" />
+        <Button
+          variant="outline"
+          size="icon"
+          className="h-8 w-8"
+          onClick={fetchData}
+          title="Refresh data"
+        >
+          <RefreshCw className="h-3.5 w-3.5" />
         </Button>
       </div>
 
       <Tabs defaultValue="overview">
-        <TabsList>
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="charts">All Charts</TabsTrigger>
-          <TabsTrigger value="history">History</TabsTrigger>
+        <TabsList className="h-9">
+          <TabsTrigger value="overview" className="text-xs px-4">Overview</TabsTrigger>
+          <TabsTrigger value="charts" className="text-xs px-4">All Charts</TabsTrigger>
+          <TabsTrigger value="history" className="text-xs px-4">History</TabsTrigger>
         </TabsList>
 
-        {/* Overview Tab */}
-        <TabsContent value="overview" className="space-y-6 mt-4">
-          <div className="grid grid-cols-1 gap-4">
-            <WeightOverviewChart data={measurements} />
-          </div>
+        <TabsContent value="overview" className="space-y-5 mt-5">
+          <WeightOverviewChart data={measurements} />
           {latest && <LatestStats current={latest} previous={previous} />}
         </TabsContent>
 
-        {/* All Charts Tab */}
-        <TabsContent value="charts" className="mt-4">
+        <TabsContent value="charts" className="mt-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
             {METRIC_CONFIGS.map((metric) => (
               <MetricLineChart key={metric.key} data={measurements} metric={metric} />
@@ -150,44 +142,54 @@ export default function DashboardPage() {
           </div>
         </TabsContent>
 
-        {/* History Tab */}
-        <TabsContent value="history" className="mt-4">
-          <div className="rounded-lg border overflow-x-auto">
+        <TabsContent value="history" className="mt-5">
+          <div className="rounded-xl border border-border/60 overflow-x-auto">
             <table className="w-full text-sm">
               <thead>
-                <tr className="border-b bg-muted/50">
-                  <th className="px-4 py-3 text-left font-medium">Date</th>
-                  <th className="px-4 py-3 text-right font-medium">Weight</th>
-                  <th className="px-4 py-3 text-right font-medium">BMI</th>
-                  <th className="px-4 py-3 text-right font-medium">Fat %</th>
-                  <th className="px-4 py-3 text-right font-medium">Muscle %</th>
-                  <th className="px-4 py-3 text-right font-medium">Water %</th>
-                  <th className="px-4 py-3 text-right font-medium">Body Age</th>
-                  <th className="px-4 py-3" />
+                <tr className="border-b border-border/60">
+                  <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Weight</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">BMI</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Fat %</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Muscle %</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Water %</th>
+                  <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Body Age</th>
+                  <th className="px-4 py-3 w-10" />
                 </tr>
               </thead>
               <tbody>
-                {[...measurements].reverse().map((m) => (
-                  <tr key={m.id} className="border-b last:border-0 hover:bg-muted/30 transition-colors">
-                    <td className="px-4 py-3 text-muted-foreground whitespace-nowrap">
-                      {format(parseISO(m.date), "dd MMM yyyy")}
+                {reversedMeasurements.map((m, i) => {
+                  const dateStr = format(parseISO(m.date), "dd MMM yyyy");
+                  return (
+                  <tr
+                    key={m.id}
+                    className="border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors"
+                  >
+                    <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap font-data">
+                      {i === 0 ? (
+                        <span className="inline-flex items-center gap-1.5">
+                          <span className="h-1.5 w-1.5 rounded-full bg-primary inline-block" />
+                          {dateStr}
+                        </span>
+                      ) : dateStr}
                     </td>
-                    <td className="px-4 py-3 text-right font-medium">{m.weight} Kg</td>
-                    <td className="px-4 py-3 text-right">{m.bmi}</td>
-                    <td className="px-4 py-3 text-right">{m.fatPercent}%</td>
-                    <td className="px-4 py-3 text-right">{m.musclePercent}%</td>
-                    <td className="px-4 py-3 text-right">{m.waterPercent}%</td>
-                    <td className="px-4 py-3 text-right">{m.bodyAge} yrs</td>
+                    <td className="px-4 py-3 text-right font-data text-sm font-semibold">{m.weight}<span className="text-xs text-muted-foreground ml-0.5 font-sans font-normal">kg</span></td>
+                    <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{m.bmi}</td>
+                    <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{m.fatPercent}%</td>
+                    <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{m.musclePercent}%</td>
+                    <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{m.waterPercent}%</td>
+                    <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{m.bodyAge}<span className="text-[10px] text-muted-foreground/60 ml-0.5 font-sans">yr</span></td>
                     <td className="px-4 py-3 text-right">
                       <Link
                         href={`/edit?id=${m.id}`}
-                        className={buttonVariants({ variant: "ghost", size: "icon" })}
+                        className={buttonVariants({ variant: "ghost", size: "icon" }) + " h-7 w-7"}
                       >
-                        <Pencil className="h-3.5 w-3.5" />
+                        <Pencil className="h-3 w-3" />
                       </Link>
                     </td>
                   </tr>
-                ))}
+                  );
+                })}
               </tbody>
             </table>
           </div>
