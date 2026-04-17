@@ -1,0 +1,12 @@
+{
+  "projects": {
+    "default": "road-2-sihat"
+  },
+  "targets": {
+    "road-2-sihat": {
+      "hosting": {
+        "road2sihat": ["road2sihat"]
+      }
+    }
+  }
+}

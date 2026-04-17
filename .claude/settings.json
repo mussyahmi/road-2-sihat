@@ -2,7 +2,16 @@
   "permissions": {
     "allow": [
       "Bash(npx create-next-app@latest . --typescript --tailwind --eslint --app --src-dir --import-alias \"@/*\" --no-git --yes)",
-      "Bash(npx shadcn@latest init --defaults)"
+      "Bash(npx shadcn@latest init --defaults)",
+      "Bash(npx shadcn@latest add card badge select tabs dropdown-menu avatar separator)",
+      "Bash(python3 -c ' *)",
+      "Bash(pip3 install *)",
+      "Bash(firebase --version)",
+      "Bash(node scripts/seed-measurements.mjs)",
+      "Bash(npm run *)"
+    ],
+    "additionalDirectories": [
+      "/Users/mustafasyahmi/development/road-2-sihat/src/app/(app)/edit"
     ]
   }
 }

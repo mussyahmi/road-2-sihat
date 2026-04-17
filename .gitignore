@@ -39,3 +39,12 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# firebase admin service account (never commit)
+scripts/serviceAccount.json
+
+# firebase deploy cache
+.firebase/
+
+# personal data exports
+*.xlsx
