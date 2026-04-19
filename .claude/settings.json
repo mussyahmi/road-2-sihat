@@ -8,10 +8,14 @@
       "Bash(pip3 install *)",
       "Bash(firebase --version)",
       "Bash(node scripts/seed-measurements.mjs)",
-      "Bash(npm run *)"
+      "Bash(npm run *)",
+      "WebSearch",
+      "Edit(~/.claude/skills/frontend-design/**)",
+      "Bash(ls *.json)"
     ],
     "additionalDirectories": [
-      "/Users/mustafasyahmi/development/road-2-sihat/src/app/(app)/edit"
+      "/Users/mustafasyahmi/development/road-2-sihat/src/app/(app)/edit",
+      "/Users/mustafasyahmi/.claude/skills"
     ]
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { addMeasurement } from "@/lib/firestore";
@@ -120,6 +120,44 @@ export default function AddPage() {
   const [jsonError, setJsonError] = useState("");
   const [applied, setApplied] = useState(false);
 
+  const applyParsed = useCallback((parsed: Record<string, unknown>) => {
+    const allowed = new Set<string>([
+      "date","weight","bmi","fatPercent","bodyFatWeight","skeletalMuscleMassPercent",
+      "skeletalMuscleWeight","musclePercent","muscleWeight","vFat","waterPercent",
+      "weightOfWater","metabolism","obesityDegree","boneMass","protein",
+      "weightWithoutFat","bodyAge","height","notes",
+    ]);
+    const update: Partial<FormData> = {};
+    for (const [k, v] of Object.entries(parsed)) {
+      if (allowed.has(k)) (update as Record<string, unknown>)[k] = v;
+    }
+    setForm((prev) => ({ ...prev, ...update }));
+    if (update.date) {
+      const [d, t] = (update.date as string).split("T");
+      if (d) setDateInput(d);
+      if (t) setTimeInput(t.slice(0, 5));
+    }
+    setApplied(true);
+    setAiOpen(false);
+  }, []);
+
+  useEffect(() => {
+    const handler = (e: ClipboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target.tagName === "TEXTAREA" || target.tagName === "INPUT") return;
+      const text = e.clipboardData?.getData("text") ?? "";
+      try {
+        const parsed = JSON.parse(text.trim());
+        if (typeof parsed === "object" && parsed !== null && ("weight" in parsed || "date" in parsed)) {
+          e.preventDefault();
+          applyParsed(parsed);
+        }
+      } catch { /* not JSON, ignore */ }
+    };
+    document.addEventListener("paste", handler);
+    return () => document.removeEventListener("paste", handler);
+  }, [applyParsed]);
+
   const copyPrompt = async () => {
     await navigator.clipboard.writeText(AI_PROMPT);
     setCopied(true);
@@ -130,25 +168,7 @@ export default function AddPage() {
     setJsonError("");
     setApplied(false);
     try {
-      const parsed = JSON.parse(jsonInput.trim());
-      const allowed = new Set<string>([
-        "date","weight","bmi","fatPercent","bodyFatWeight","skeletalMuscleMassPercent",
-        "skeletalMuscleWeight","musclePercent","muscleWeight","vFat","waterPercent",
-        "weightOfWater","metabolism","obesityDegree","boneMass","protein",
-        "weightWithoutFat","bodyAge","height","notes",
-      ]);
-      const update: Partial<FormData> = {};
-      for (const [k, v] of Object.entries(parsed)) {
-        if (allowed.has(k)) (update as Record<string, unknown>)[k] = v;
-      }
-      setForm((prev) => ({ ...prev, ...update }));
-      if (update.date) {
-        const [d, t] = (update.date as string).split("T");
-        if (d) setDateInput(d);
-        if (t) setTimeInput(t.slice(0, 5));
-      }
-      setApplied(true);
-      setAiOpen(false);
+      applyParsed(JSON.parse(jsonInput.trim()));
     } catch {
       setJsonError("Invalid JSON — paste only the raw JSON returned by the AI.");
     }
@@ -194,6 +214,10 @@ export default function AddPage() {
           <h1 className="text-lg font-bold tracking-tight">Add Measurement</h1>
           <p className="text-xs text-muted-foreground mt-0.5">Log your body composition data</p>
         </div>
+      </div>
+
+      <div className="text-xs text-muted-foreground px-1">
+        Tip: paste a JSON measurement object anywhere on this page to auto-fill the form.
       </div>
 
       <div className="rounded-xl border border-dashed border-border/60 bg-muted/20">
