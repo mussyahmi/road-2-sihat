@@ -98,7 +98,7 @@ const FIELDS: FieldConfig[] = [
   { key: "vFat", label: "Visceral Fat", unit: "", step: 0.1 },
   { key: "waterPercent", label: "Water %", unit: "%", step: 0.1 },
   { key: "weightOfWater", label: "Water Weight", unit: "Kg", step: 0.1 },
-  { key: "metabolism", label: "Metabolism", unit: "kcal/day", step: 1 },
+  { key: "metabolism", label: "Metabolism", unit: "kcal/day", step: 0.1 },
   { key: "obesityDegree", label: "Obesity Degree %", unit: "%", step: 0.1 },
   { key: "boneMass", label: "Bone Mass", unit: "Kg", step: 0.1 },
   { key: "protein", label: "Protein %", unit: "%", step: 0.1 },
@@ -145,7 +145,7 @@ export default function AddPage() {
     const handler = (e: ClipboardEvent) => {
       const target = e.target as HTMLElement;
       if (target.tagName === "TEXTAREA" || target.tagName === "INPUT") return;
-      const text = e.clipboardData?.getData("text") ?? "";
+      const text = (e.clipboardData?.getData("text") ?? "").replace(/[\u201C\u201D\u2018\u2019]/g, (c) => c === "\u2018" || c === "\u2019" ? "'" : '"');
       try {
         const parsed = JSON.parse(text.trim());
         if (typeof parsed === "object" && parsed !== null && ("weight" in parsed || "date" in parsed)) {
@@ -164,11 +164,16 @@ export default function AddPage() {
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const normalizeJson = (text: string) =>
+    text.trim().replace(/[\u201C\u201D\u2018\u2019]/g, (c) =>
+      c === "\u2018" || c === "\u2019" ? "'" : '"'
+    );
+
   const applyJson = () => {
     setJsonError("");
     setApplied(false);
     try {
-      applyParsed(JSON.parse(jsonInput.trim()));
+      applyParsed(JSON.parse(normalizeJson(jsonInput)));
     } catch {
       setJsonError("Invalid JSON — paste only the raw JSON returned by the AI.");
     }

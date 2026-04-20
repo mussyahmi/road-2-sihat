@@ -25,7 +25,7 @@ const FIELDS: { key: keyof FormData; label: string; unit: string; step: number }
   { key: "vFat", label: "Visceral Fat", unit: "", step: 0.1 },
   { key: "waterPercent", label: "Water %", unit: "%", step: 0.1 },
   { key: "weightOfWater", label: "Water Weight", unit: "Kg", step: 0.1 },
-  { key: "metabolism", label: "Metabolism", unit: "kcal/day", step: 1 },
+  { key: "metabolism", label: "Metabolism", unit: "kcal/day", step: 0.1 },
   { key: "obesityDegree", label: "Obesity Degree %", unit: "%", step: 0.1 },
   { key: "boneMass", label: "Bone Mass", unit: "Kg", step: 0.1 },
   { key: "protein", label: "Protein %", unit: "%", step: 0.1 },

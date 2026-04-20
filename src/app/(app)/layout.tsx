@@ -25,10 +25,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <Navbar />
       <main className="flex-1 container mx-auto px-4 py-6">{children}</main>
 
-      {pathname === "/dashboard" && (
+      {(pathname === "/dashboard" || pathname === "/dashboard/") && (
         <Link
           href="/add"
-          className="fixed bottom-6 right-6 z-50 flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all hover:scale-105 active:scale-95"
+          className="fixed bottom-6 right-6 z-[100] flex h-14 w-14 items-center justify-center rounded-full bg-primary text-primary-foreground transition-all hover:scale-105 active:scale-95"
           style={{ boxShadow: "0 4px 24px oklch(0.78 0.155 75 / 30%)" }}
           aria-label="Add Entry"
         >
