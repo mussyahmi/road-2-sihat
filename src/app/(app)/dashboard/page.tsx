@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useAuth } from "@/contexts/auth-context";
 import { getMeasurements } from "@/lib/firestore";
-import { Measurement, METRIC_CONFIGS } from "@/lib/types";
+import { Measurement, METRIC_CONFIGS, fmtVal } from "@/lib/types";
 import { WeightOverviewChart } from "@/components/charts/weight-overview-chart";
 import { MetricLineChart } from "@/components/charts/metric-line-chart";
 import { LatestStats } from "@/components/latest-stats";
@@ -166,19 +166,14 @@ export default function DashboardPage() {
                     className="border-b border-border/40 last:border-0 hover:bg-muted/20 transition-colors"
                   >
                     <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap font-data">
-                      {i === 0 ? (
-                        <span className="inline-flex items-center gap-1.5">
-                          <span className="h-1.5 w-1.5 rounded-full bg-primary inline-block" />
-                          {dateStr}
-                        </span>
-                      ) : dateStr}
+                      {dateStr}
                     </td>
-                    <td className="px-4 py-3 text-right font-data text-sm font-semibold">{m.weight}<span className="text-xs text-muted-foreground ml-0.5 font-sans font-normal">kg</span></td>
-                    <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{m.bmi}</td>
-                    <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{m.fatPercent}%</td>
-                    <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{m.musclePercent}%</td>
-                    <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{m.waterPercent}%</td>
-                    <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{m.bodyAge}<span className="text-[10px] text-muted-foreground/60 ml-0.5 font-sans">yr</span></td>
+                    <td className="px-4 py-3 text-right font-data text-sm font-semibold">{fmtVal("weight", m.weight)}<span className="text-xs text-muted-foreground ml-0.5 font-sans font-normal">kg</span></td>
+                    <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{fmtVal("bmi", m.bmi)}</td>
+                    <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{fmtVal("fatPercent", m.fatPercent)}%</td>
+                    <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{fmtVal("musclePercent", m.musclePercent)}%</td>
+                    <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{fmtVal("waterPercent", m.waterPercent)}%</td>
+                    <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{fmtVal("bodyAge", m.bodyAge)}<span className="text-[10px] text-muted-foreground/60 ml-0.5 font-sans">yr</span></td>
                     <td className="px-4 py-3 text-right">
                       <Link
                         href={`/edit?id=${m.id}`}

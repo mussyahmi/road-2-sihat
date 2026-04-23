@@ -75,7 +75,7 @@ const EMPTY_FORM: FormData = {
   protein: 0,
   weightWithoutFat: 0,
   bodyAge: 0,
-  height: 170,
+  height: 0,
   notes: "",
 };
 
@@ -165,9 +165,12 @@ export default function AddPage() {
   };
 
   const normalizeJson = (text: string) =>
-    text.trim().replace(/[\u201C\u201D\u2018\u2019]/g, (c) =>
-      c === "\u2018" || c === "\u2019" ? "'" : '"'
-    );
+    text
+      .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, "")
+      .trim()
+      .replace(/[\u201C\u201D\u2018\u2019]/g, (c) =>
+        c === "\u2018" || c === "\u2019" ? "'" : '"'
+      );
 
   const applyJson = () => {
     setJsonError("");

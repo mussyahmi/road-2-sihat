@@ -1,11 +1,12 @@
 "use client";
 
-import { Measurement } from "@/lib/types";
+import { Measurement, fmtVal } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import {
   Scale, Percent, Flame, Droplets, Zap, Bone, Activity,
   Heart, BarChart2, TrendingDown, TrendingUp, Minus
 } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 interface StatRow {
   label: string;
@@ -42,6 +43,7 @@ interface Props {
 }
 
 export function LatestStats({ current, previous }: Props) {
+  const router = useRouter();
   return (
     <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-2.5">
       {STATS.map((s) => {
@@ -61,7 +63,8 @@ export function LatestStats({ current, previous }: Props) {
         return (
           <Card
             key={s.key}
-            className="p-3 border-border/60 hover:border-border/80 transition-colors"
+            onClick={() => router.push(`/metric/${s.key}`)}
+            className="p-3 border-border/60 hover:border-border/80 hover:shadow-sm cursor-pointer transition-all"
           >
             <CardContent className="p-0">
               {/* Label row */}
@@ -73,7 +76,7 @@ export function LatestStats({ current, previous }: Props) {
               {/* Value + delta */}
               <div className="flex items-end justify-between gap-1">
                 <div className="leading-none">
-                  <span className="font-data text-lg font-bold text-foreground">{val}</span>
+                  <span className="font-data text-lg font-bold text-foreground">{fmtVal(s.key, val)}</span>
                   {s.unit && (
                     <span className="text-[10px] text-muted-foreground ml-0.5">{s.unit}</span>
                   )}
@@ -96,7 +99,7 @@ export function LatestStats({ current, previous }: Props) {
                     ) : (
                       <TrendingUp className="h-2.5 w-2.5" />
                     )}
-                    {delta > 0 ? "+" : ""}{delta.toFixed(1)}
+                    {delta > 0 ? "+" : ""}{fmtVal(s.key, delta)}
                   </span>
                 )}
               </div>

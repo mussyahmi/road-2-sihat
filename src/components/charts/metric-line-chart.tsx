@@ -10,9 +10,10 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import { format, parseISO } from "date-fns";
-import { Measurement, MetricConfig } from "@/lib/types";
+import { Measurement, MetricConfig, fmtVal } from "@/lib/types";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { TrendingDown, TrendingUp, Minus } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 const LINE_COLOR = "#F5A623"; // amber — consistent accent
 
@@ -24,24 +25,25 @@ interface Props {
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function MiniTooltip({ active, payload, label }: any) {
   if (!active || !payload?.length) return null;
+  const { value, unit, metricKey } = payload[0].payload;
   return (
     <div className="rounded-md border border-border/60 bg-popover px-2.5 py-1.5 shadow-lg text-xs">
       <p className="font-data text-[10px] text-muted-foreground">{label}</p>
       <p className="font-data font-semibold text-foreground">
-        {payload[0].value}
-        {payload[0].payload.unit && (
-          <span className="text-muted-foreground ml-0.5">{payload[0].payload.unit}</span>
-        )}
+        {fmtVal(metricKey, value)}
+        {unit && <span className="text-muted-foreground ml-0.5">{unit}</span>}
       </p>
     </div>
   );
 }
 
 export function MetricLineChart({ data, metric }: Props) {
+  const router = useRouter();
   const chartData = data.map((m) => ({
     date: format(parseISO(m.date), "dd MMM"),
     value: m[metric.key] as number,
     unit: metric.unit,
+    metricKey: metric.key,
   }));
 
   const values = chartData.map((d) => d.value);
@@ -54,7 +56,10 @@ export function MetricLineChart({ data, metric }: Props) {
   const delta = latest !== undefined && prev !== undefined ? latest - prev : null;
 
   return (
-    <Card className="border-border/60 hover:border-border/80 transition-colors">
+    <Card
+      onClick={() => router.push(`/metric/${metric.key}`)}
+      className="border-border/60 hover:border-border/80 hover:shadow-sm cursor-pointer transition-all"
+    >
       <CardHeader className="pb-1 pt-4 px-4">
         <p className="text-[11px] font-medium text-muted-foreground uppercase tracking-wider">
           {metric.label}
@@ -62,7 +67,7 @@ export function MetricLineChart({ data, metric }: Props) {
         </p>
         <div className="flex items-end justify-between">
           <p className="font-data text-2xl font-bold text-foreground leading-none mt-1">
-            {latest ?? "—"}
+            {latest != null ? fmtVal(metric.key, latest) : "—"}
           </p>
           {delta !== null && (
             <span
@@ -81,7 +86,7 @@ export function MetricLineChart({ data, metric }: Props) {
               ) : (
                 <TrendingUp className="h-2.5 w-2.5" />
               )}
-              {delta > 0 ? "+" : ""}{delta.toFixed(1)}
+              {delta > 0 ? "+" : ""}{fmtVal(metric.key, delta)}
             </span>
           )}
         </div>
