@@ -66,6 +66,8 @@ export interface InsightCache {
   latestId: string;
   goal: string;
   insight: string;
+  dos?: string[];
+  donts?: string[];
 }
 
 export async function getInsightCache(userId: string): Promise<InsightCache | null> {
