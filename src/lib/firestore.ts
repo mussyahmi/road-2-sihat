@@ -2,9 +2,11 @@ import {
   collection,
   addDoc,
   getDocs,
+  getDoc,
   doc,
   deleteDoc,
   updateDoc,
+  setDoc,
   query,
   orderBy,
   Timestamp,
@@ -47,4 +49,15 @@ export async function deleteMeasurement(
 ): Promise<void> {
   const ref = doc(db, "users", userId, "measurements", measurementId);
   await deleteDoc(ref);
+}
+
+export async function getGoal(userId: string): Promise<string> {
+  const ref = doc(db, "users", userId);
+  const snap = await getDoc(ref);
+  return snap.exists() ? (snap.data()?.goal ?? "") : "";
+}
+
+export async function saveGoal(userId: string, goal: string): Promise<void> {
+  const ref = doc(db, "users", userId);
+  await setDoc(ref, { goal }, { merge: true });
 }
