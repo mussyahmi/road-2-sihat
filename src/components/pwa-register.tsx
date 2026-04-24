@@ -65,7 +65,7 @@ export function PWARegister() {
       `}</style>
 
       <div
-        className="update-toast fixed top-4 left-1/2 z-50 flex items-center gap-3 rounded-2xl px-3 py-2.5 pr-2"
+        className="update-toast fixed top-[72px] left-1/2 z-50 flex items-center gap-3 rounded-2xl px-3 py-2.5 pr-2"
         style={{
           background: "oklch(0.18 0.01 250 / 0.92)",
           backdropFilter: "blur(16px) saturate(1.4)",
