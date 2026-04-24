@@ -46,5 +46,8 @@ scripts/serviceAccount.json
 # firebase deploy cache
 .firebase/
 
+# claude code settings
+.claude/
+
 # personal data exports
 *.xlsx
