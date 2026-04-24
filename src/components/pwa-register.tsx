@@ -3,6 +3,8 @@
 import { useEffect, useState } from "react";
 import { RotateCw } from "lucide-react";
 
+let skipWaitingTriggered = false;
+
 export function PWARegister() {
   const [waitingSW, setWaitingSW] = useState<ServiceWorker | null>(null);
   const [dismissed, setDismissed] = useState(false);
@@ -10,8 +12,9 @@ export function PWARegister() {
   useEffect(() => {
     if (!("serviceWorker" in navigator)) return;
 
+    // Only reload when WE triggered skip waiting, not on every controller change
     navigator.serviceWorker.addEventListener("controllerchange", () => {
-      window.location.reload();
+      if (skipWaitingTriggered) window.location.reload();
     });
 
     navigator.serviceWorker.register("/sw.js").then((reg) => {
@@ -36,6 +39,7 @@ export function PWARegister() {
 
   function applyUpdate() {
     if (!waitingSW) return;
+    skipWaitingTriggered = true;
     waitingSW.postMessage("SKIP_WAITING");
     setWaitingSW(null);
   }
