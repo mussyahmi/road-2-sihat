@@ -118,7 +118,7 @@ export function AiInsight({ measurements }: AiInsightProps) {
     if (user) saveGoal(user.uid, trimmed);
     setInsight(null);
     setVisible(false);
-    fetchInsight(trimmed);
+    // Don't call fetchInsight directly — the effect handles it when insight=null + goal changes
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -126,14 +126,6 @@ export function AiInsight({ measurements }: AiInsightProps) {
     if (e.key === "Escape") setEditing(false);
   };
 
-  if (error === "rate-limited") {
-    return (
-      <div className="rounded-xl border border-border/60 bg-muted/10 px-4 py-3 flex items-center gap-3">
-        <AlertCircle className="h-4 w-4 text-amber-500/70 shrink-0" />
-        <p className="text-xs text-muted-foreground">Too many requests — please try again later.</p>
-      </div>
-    );
-  }
 
   if (error === "no-key") {
     return (
@@ -289,6 +281,8 @@ export function AiInsight({ measurements }: AiInsightProps) {
             <div className="insight-skeleton h-3 w-[80%]" />
             <div className="insight-skeleton h-3 w-[55%]" />
           </div>
+        ) : error === "rate-limited" ? (
+          <p className="text-sm text-muted-foreground/70">Too many requests — please try again later.</p>
         ) : error ? (
           <p className="text-xs text-red-400">{error}</p>
         ) : insight ? (
