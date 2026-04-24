@@ -54,6 +54,7 @@ export function AiInsight({ measurements }: AiInsightProps) {
   const [error, setError]       = useState<string | null>(null);
   const [visible, setVisible]   = useState(false);
   const [goal, setGoal]         = useState("");
+  const [goalReady, setGoalReady] = useState(false);
   const [editing, setEditing]   = useState(false);
   const [draft, setDraft]       = useState("");
   const inputRef                = useRef<HTMLInputElement>(null);
@@ -62,10 +63,12 @@ export function AiInsight({ measurements }: AiInsightProps) {
   const latest   = measurements[measurements.length - 1];
   const latestId = latest?.id ?? latest?.date ?? "";
 
-  // Hydrate goal from Firestore after mount
+  // Hydrate goal from Firestore, mark ready when done
   useEffect(() => {
     if (!user) return;
-    getGoal(user.uid).then(setGoal).catch(() => {});
+    getGoal(user.uid)
+      .then(g => { setGoal(g); setGoalReady(true); })
+      .catch(() => setGoalReady(true));
   }, [user]);
 
   const fetchInsight = useCallback(async (currentGoal: string) => {
@@ -109,7 +112,10 @@ export function AiInsight({ measurements }: AiInsightProps) {
     }
   }, [measurements, latestId]);
 
-  useEffect(() => { fetchInsight(goal); }, [fetchInsight, goal]);
+  useEffect(() => {
+    if (!goalReady) return;
+    fetchInsight(goal);
+  }, [fetchInsight, goal, goalReady]);
 
   // Focus input when editing starts
   useEffect(() => {
