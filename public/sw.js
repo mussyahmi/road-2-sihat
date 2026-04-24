@@ -1,11 +1,14 @@
-const CACHE_NAME = 'road2sihat-v1';
+const CACHE_NAME = 'road2sihat-v2';
 const APP_SHELL = ['/', '/dashboard/', '/signin/'];
 
 self.addEventListener('install', (event) => {
-  self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL))
   );
+});
+
+self.addEventListener('message', (event) => {
+  if (event.data === 'SKIP_WAITING') self.skipWaiting();
 });
 
 self.addEventListener('activate', (event) => {
