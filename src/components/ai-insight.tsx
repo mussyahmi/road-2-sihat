@@ -33,9 +33,7 @@ export function AiInsight({ measurements }: AiInsightProps) {
   const [goalReady, setGoalReady] = useState(false);
   const [editing, setEditing]     = useState(false);
   const [draft, setDraft]         = useState("");
-  const [retryIn, setRetryIn]     = useState(0);
   const inputRef                  = useRef<HTMLInputElement>(null);
-  const retryTimerRef             = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { user } = useAuth();
   const latest   = measurements[measurements.length - 1];
@@ -90,18 +88,6 @@ export function AiInsight({ measurements }: AiInsightProps) {
       const msg = err instanceof Error ? err.message : "";
       if (msg.includes("429") || msg.toLowerCase().includes("quota") || msg.toLowerCase().includes("rate")) {
         setError("rate-limited");
-        setRetryIn(60);
-        if (retryTimerRef.current) clearInterval(retryTimerRef.current);
-        retryTimerRef.current = setInterval(() => {
-          setRetryIn(prev => {
-            if (prev <= 1) {
-              clearInterval(retryTimerRef.current!);
-              retryTimerRef.current = null;
-              return 0;
-            }
-            return prev - 1;
-          });
-        }, 1000);
       } else {
         setError("Something went wrong. Try again.");
       }
@@ -109,10 +95,6 @@ export function AiInsight({ measurements }: AiInsightProps) {
       setLoading(false);
     }
   }, [measurements, latestId, user]);
-
-  useEffect(() => () => {
-    if (retryTimerRef.current) clearInterval(retryTimerRef.current);
-  }, []);
 
   useEffect(() => {
     if (!goalReady) return;
@@ -146,26 +128,9 @@ export function AiInsight({ measurements }: AiInsightProps) {
 
   if (error === "rate-limited") {
     return (
-      <div className="rounded-xl border border-border/60 bg-muted/10 px-4 py-3 flex items-center justify-between gap-3">
-        <div className="flex items-center gap-3 min-w-0">
-          <AlertCircle className="h-4 w-4 text-amber-500/70 shrink-0" />
-          <p className="text-xs text-muted-foreground">
-            Rate limited.{" "}
-            {retryIn > 0 ? (
-              <>Try again in <span className="font-semibold tabular-nums text-foreground">{retryIn}s</span></>
-            ) : (
-              "Ready to retry."
-            )}
-          </p>
-        </div>
-        <button
-          onClick={() => { setError(null); fetchInsight(goal); }}
-          disabled={retryIn > 0}
-          className="shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg transition-all disabled:opacity-40 disabled:cursor-not-allowed"
-          style={{ background: "oklch(0.62 0.155 75 / 12%)", color: "oklch(0.50 0.155 75)" }}
-        >
-          Retry
-        </button>
+      <div className="rounded-xl border border-border/60 bg-muted/10 px-4 py-3 flex items-center gap-3">
+        <AlertCircle className="h-4 w-4 text-amber-500/70 shrink-0" />
+        <p className="text-xs text-muted-foreground">Too many requests — please try again later.</p>
       </div>
     );
   }
