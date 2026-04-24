@@ -147,8 +147,8 @@ export function AiInsight({ measurements }: AiInsightProps) {
   if (error === "rate-limited") {
     return (
       <div className="rounded-xl border border-border/60 bg-muted/10 px-4 py-3 flex items-center justify-between gap-3">
-        <div className="flex items-start gap-3 min-w-0">
-          <AlertCircle className="h-4 w-4 text-amber-500/70 mt-0.5 shrink-0" />
+        <div className="flex items-center gap-3 min-w-0">
+          <AlertCircle className="h-4 w-4 text-amber-500/70 shrink-0" />
           <p className="text-xs text-muted-foreground">
             Rate limited.{" "}
             {retryIn > 0 ? (
