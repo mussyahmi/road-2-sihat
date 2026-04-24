@@ -10,6 +10,31 @@ import { Badge } from "@/components/ui/badge";
 import { ArrowLeft, Save, Loader2, ImageUp, X, Check, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { inputClass } from "@/lib/styles";
+import { genAI, MODEL } from "@/lib/gemini";
+
+const EXTRACT_PROMPT = `You are extracting body composition data from a smart scale screenshot.
+
+First, determine if this image shows a body composition scale result (weight, fat %, muscle %, BMI, etc.).
+
+If it does NOT show scale data, return exactly this and nothing else:
+{"error":"not_a_scale"}
+
+If it does show scale data, return ONLY a valid JSON object with these keys (all numbers, except date which is an ISO string like "2026-04-17T07:11:00"):
+
+{
+  "date": "YYYY-MM-DDTHH:MM:00",
+  "weight": 0, "bmi": 0, "fatPercent": 0, "bodyFatWeight": 0,
+  "skeletalMuscleMassPercent": 0, "skeletalMuscleWeight": 0,
+  "musclePercent": 0, "muscleWeight": 0, "vFat": 0,
+  "waterPercent": 0, "weightOfWater": 0, "metabolism": 0,
+  "obesityDegree": 0, "boneMass": 0, "protein": 0,
+  "weightWithoutFat": 0, "bodyAge": 0, "height": 0
+}
+
+Rules:
+- Fill in the date from the timestamp shown on the screenshot. If no date is visible, use today's date.
+- For any metric not visible in the screenshot, use 0.
+- Return only the raw JSON, nothing else.`;
 
 type FormData = Omit<Measurement, "id">;
 
@@ -137,19 +162,21 @@ export default function AddPage() {
         reader.readAsDataURL(file);
       });
 
-      const res = await fetch("/api/extract-measurement", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ imageBase64: base64, mimeType: file.type }),
-      });
+      const model = genAI.getGenerativeModel({ model: MODEL });
+      const result = await model.generateContent([
+        EXTRACT_PROMPT,
+        { inlineData: { mimeType: file.type, data: base64 } },
+      ]);
 
-      const json = await res.json();
-      if (!res.ok || json.error) {
-        setExtractError(json.error ?? "Failed to extract data from image.");
+      const text = result.response.text().trim();
+      const parsed = JSON.parse(text.replace(/^```json?\n?/, "").replace(/\n?```$/, ""));
+
+      if (parsed.error === "not_a_scale") {
+        setExtractError("That doesn't look like a scale screenshot. Please upload a body composition result.");
         return;
       }
 
-      applyParsed(json.data);
+      applyParsed(parsed);
     } catch {
       setExtractError("Something went wrong. Try again.");
     } finally {

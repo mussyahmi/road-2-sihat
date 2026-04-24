@@ -2,9 +2,22 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Measurement } from "@/lib/types";
+import { buildMeasurementContext, serializeMeasurements } from "@/lib/ai-context";
+import { genAI, MODEL } from "@/lib/gemini";
 import { Sparkles, AlertCircle } from "lucide-react";
 
 const CACHE_KEY = "ai-insight-cache";
+
+const SYSTEM_PROMPT = `You are a supportive health coach analyzing a user's body composition data logged from a smart scale.
+
+Rules:
+- Be concise: 2-4 sentences max.
+- Focus on the most meaningful changes visible in the data (fat loss vs muscle gain, body age trend, visceral fat, metabolism).
+- If only one entry exists, describe their current baseline — don't fabricate trends.
+- Be encouraging but honest. Don't sugarcoat if a metric is moving in the wrong direction.
+- Speak directly to the user ("your", "you").
+- Do NOT list every metric. Pick the 2-3 most notable signals.
+- Do NOT use markdown, bullet points, or headers — plain sentences only.`;
 
 interface CacheEntry {
   latestId: string;
@@ -51,30 +64,26 @@ export function AiInsight({ measurements }: AiInsightProps) {
       return;
     }
 
+    if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+      setError("no-key");
+      return;
+    }
+
     setLoading(true);
     setVisible(false);
     setError(null);
 
     try {
-      const res = await fetch("/api/health-insight", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ measurements }),
-      });
+      const context = buildMeasurementContext(measurements);
+      const serialized = serializeMeasurements(context);
+      const prompt = `${SYSTEM_PROMPT}\n\nHere are the user's body composition entries (oldest to newest):\n\n${serialized}\n\nProvide a brief, insightful health coaching message based on these entries.`;
 
-      const json = await res.json();
+      const model = genAI.getGenerativeModel({ model: MODEL });
+      const result = await model.generateContent(prompt);
+      const text = result.response.text().trim();
 
-      if (!res.ok || json.error) {
-        if (res.status === 500 && json.error?.includes("GEMINI_API_KEY")) {
-          setError("no-key");
-        } else {
-          setError(json.error ?? "Failed to load insight.");
-        }
-        return;
-      }
-
-      setInsight(json.insight);
-      writeCache(latestId, json.insight);
+      setInsight(text);
+      writeCache(latestId, text);
       setTimeout(() => setVisible(true), 50);
     } catch {
       setError("Something went wrong. Try again.");
@@ -92,11 +101,8 @@ export function AiInsight({ measurements }: AiInsightProps) {
       <div className="rounded-xl border border-border/60 bg-muted/10 px-4 py-3 flex items-start gap-3">
         <AlertCircle className="h-4 w-4 text-muted-foreground/60 mt-0.5 shrink-0" />
         <p className="text-xs text-muted-foreground">
-          Add your <span className="font-mono">GEMINI_API_KEY</span> to{" "}
-          <span className="font-mono">.env.local</span> to enable AI insights.{" "}
-          <a href="https://aistudio.google.com/apikey" target="_blank" rel="noreferrer" className="underline underline-offset-2">
-            Get a free key →
-          </a>
+          Add your <span className="font-mono">NEXT_PUBLIC_GEMINI_API_KEY</span> to{" "}
+          <span className="font-mono">.env.local</span> to enable AI insights.
         </p>
       </div>
     );
@@ -173,7 +179,6 @@ export function AiInsight({ measurements }: AiInsightProps) {
         }
       `}</style>
 
-      {/* Label */}
       <div className="flex items-center gap-2 relative z-10">
         <div
           className="flex items-center justify-center rounded-md h-6 w-6"
@@ -189,7 +194,6 @@ export function AiInsight({ measurements }: AiInsightProps) {
         </span>
       </div>
 
-      {/* Body */}
       <div className="relative z-10">
         {loading ? (
           <div className="space-y-2 py-0.5">
