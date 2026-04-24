@@ -45,12 +45,12 @@ export function PWARegister() {
   return (
     <>
       <style>{`
-        @keyframes slide-up-toast {
-          from { transform: translateX(-50%) translateY(120%); opacity: 0; }
-          to   { transform: translateX(-50%) translateY(0);    opacity: 1; }
+        @keyframes slide-down-toast {
+          from { transform: translateX(-50%) translateY(-120%); opacity: 0; }
+          to   { transform: translateX(-50%) translateY(0);     opacity: 1; }
         }
         .update-toast {
-          animation: slide-up-toast 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+          animation: slide-down-toast 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
         .update-toast-refresh {
           transition: background 0.15s, transform 0.1s;
@@ -65,7 +65,7 @@ export function PWARegister() {
       `}</style>
 
       <div
-        className="update-toast fixed bottom-24 left-1/2 z-50 flex items-center gap-3 rounded-2xl px-3 py-2.5 pr-2"
+        className="update-toast fixed top-4 left-1/2 z-50 flex items-center gap-3 rounded-2xl px-3 py-2.5 pr-2"
         style={{
           background: "oklch(0.18 0.01 250 / 0.92)",
           backdropFilter: "blur(16px) saturate(1.4)",
