@@ -94,7 +94,7 @@ export function LatestStats({ current, previous }: Props) {
                   >
                     {isNeutral ? (
                       <Minus className="h-2.5 w-2.5" />
-                    ) : isPositive ? (
+                    ) : delta! < 0 ? (
                       <TrendingDown className="h-2.5 w-2.5" />
                     ) : (
                       <TrendingUp className="h-2.5 w-2.5" />
