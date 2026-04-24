@@ -156,7 +156,7 @@ export function AiInsight({ measurements }: AiInsightProps) {
   }
 
   return (
-    <div className="ai-insight-root relative overflow-hidden rounded-xl pl-6 px-5 py-4 space-y-2.5">
+    <div className="ai-insight-root relative overflow-hidden rounded-xl px-5 py-4 space-y-2.5">
       <style>{`
         .ai-insight-root {
           border: 1px solid oklch(0.87 0.005 250 / 55%);
@@ -165,14 +165,6 @@ export function AiInsight({ measurements }: AiInsightProps) {
         :is(.dark *) .ai-insight-root {
           border-color: oklch(0.3 0.01 250 / 45%);
           background: linear-gradient(135deg, oklch(0.165 0.008 250) 0%, oklch(0.185 0.018 75) 100%);
-        }
-        .ai-insight-root::before {
-          content: '';
-          position: absolute;
-          left: 0; top: 0; bottom: 0;
-          width: 3px;
-          border-radius: 0.75rem 0 0 0.75rem;
-          background: linear-gradient(180deg, oklch(0.72 0.155 75) 0%, oklch(0.52 0.155 75) 100%);
         }
         .ai-insight-root::after {
           content: '\\201C';
