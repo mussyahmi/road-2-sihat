@@ -61,3 +61,22 @@ export async function saveGoal(userId: string, goal: string): Promise<void> {
   const ref = doc(db, "users", userId);
   await setDoc(ref, { goal }, { merge: true });
 }
+
+export interface InsightCache {
+  latestId: string;
+  goal: string;
+  insight: string;
+}
+
+export async function getInsightCache(userId: string): Promise<InsightCache | null> {
+  const ref = doc(db, "users", userId);
+  const snap = await getDoc(ref);
+  if (!snap.exists()) return null;
+  const cache = snap.data()?.insightCache;
+  return cache ?? null;
+}
+
+export async function saveInsightCache(userId: string, cache: InsightCache): Promise<void> {
+  const ref = doc(db, "users", userId);
+  await setDoc(ref, { insightCache: cache }, { merge: true });
+}

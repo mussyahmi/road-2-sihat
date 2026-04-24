@@ -4,11 +4,9 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { Measurement } from "@/lib/types";
 import { buildMeasurementContext, serializeMeasurements } from "@/lib/ai-context";
 import { genAI, MODEL } from "@/lib/gemini";
-import { getGoal, saveGoal } from "@/lib/firestore";
+import { saveGoal, saveInsightCache, getGoal } from "@/lib/firestore";
 import { useAuth } from "@/contexts/auth-context";
 import { Sparkles, AlertCircle, Target, Pencil, Check } from "lucide-react";
-
-const CACHE_KEY = "ai-insight-cache";
 
 const SYSTEM_PROMPT = `You are a supportive health coach analyzing a user's body composition data logged from a smart scale.
 
@@ -21,28 +19,6 @@ Rules:
 - Do NOT list every metric. Pick the 2-3 most notable signals.
 - Do NOT use markdown, bullet points, or headers — plain sentences only.
 - If a goal is provided, directly relate the progress to that goal. Tell them how close they are or how their current trajectory affects achieving it.`;
-
-interface CacheEntry {
-  latestId: string;
-  goal: string;
-  insight: string;
-}
-
-function readCache(latestId: string, goal: string): string | null {
-  try {
-    const raw = localStorage.getItem(CACHE_KEY);
-    if (!raw) return null;
-    const entry: CacheEntry = JSON.parse(raw);
-    return entry.latestId === latestId && entry.goal === goal ? entry.insight : null;
-  } catch { return null; }
-}
-
-function writeCache(latestId: string, goal: string, insight: string) {
-  try {
-    localStorage.setItem(CACHE_KEY, JSON.stringify({ latestId, goal, insight }));
-  } catch { /* storage full */ }
-}
-
 
 interface AiInsightProps {
   measurements: Measurement[];
@@ -63,23 +39,26 @@ export function AiInsight({ measurements }: AiInsightProps) {
   const latest   = measurements[measurements.length - 1];
   const latestId = latest?.id ?? latest?.date ?? "";
 
-  // Hydrate goal from Firestore, mark ready when done
+  // Load goal + cached insight from Firestore together
   useEffect(() => {
     if (!user) return;
     getGoal(user.uid)
-      .then(g => { setGoal(g); setGoalReady(true); })
+      .then(async (g) => {
+        setGoal(g);
+        // Check if cached insight is still valid for current data + goal
+        const { getInsightCache } = await import("@/lib/firestore");
+        const cache = await getInsightCache(user.uid);
+        if (cache && cache.latestId === latestId && cache.goal === g) {
+          setInsight(cache.insight);
+          setTimeout(() => setVisible(true), 50);
+        }
+        setGoalReady(true);
+      })
       .catch(() => setGoalReady(true));
-  }, [user]);
+  }, [user, latestId]);
 
   const fetchInsight = useCallback(async (currentGoal: string) => {
     if (measurements.length === 0) return;
-
-    const cached = readCache(latestId, currentGoal);
-    if (cached) {
-      setInsight(cached);
-      setTimeout(() => setVisible(true), 50);
-      return;
-    }
 
     if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
       setError("no-key");
@@ -103,19 +82,25 @@ export function AiInsight({ measurements }: AiInsightProps) {
       const text   = result.response.text().trim();
 
       setInsight(text);
-      writeCache(latestId, currentGoal, text);
+      if (user) saveInsightCache(user.uid, { latestId, goal: currentGoal, insight: text });
       setTimeout(() => setVisible(true), 50);
-    } catch {
-      setError("Something went wrong. Try again.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("429") || msg.toLowerCase().includes("quota") || msg.toLowerCase().includes("rate")) {
+        setError("Too many requests — you've hit the API rate limit. Wait a minute and try again.");
+      } else {
+        setError("Something went wrong. Try again.");
+      }
     } finally {
       setLoading(false);
     }
-  }, [measurements, latestId]);
+  }, [measurements, latestId, user]);
 
   useEffect(() => {
     if (!goalReady) return;
+    if (insight) return; // already loaded from cache
     fetchInsight(goal);
-  }, [fetchInsight, goal, goalReady]);
+  }, [fetchInsight, goal, goalReady, insight]);
 
   // Focus input when editing starts
   useEffect(() => {
@@ -131,8 +116,6 @@ export function AiInsight({ measurements }: AiInsightProps) {
     if (trimmed === goal) return;
     setGoal(trimmed);
     if (user) saveGoal(user.uid, trimmed);
-    // Clear cache so it regenerates with new goal
-    try { localStorage.removeItem(CACHE_KEY); } catch { /* ignore */ }
     setInsight(null);
     setVisible(false);
     fetchInsight(trimmed);

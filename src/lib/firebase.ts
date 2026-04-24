@@ -22,6 +22,7 @@ export const getFirebaseAuth = (): Auth => getAuth(getFirebaseApp());
 export const getFirebaseDb = (): Firestore => getFirestore(getFirebaseApp());
 export const getFirebaseStorage = (): FirebaseStorage => getStorage(getFirebaseApp());
 export const googleProvider = new GoogleAuthProvider();
+googleProvider.setCustomParameters({ prompt: "select_account" });
 
 // Convenience re-exports used throughout the app (client-only)
 export const auth = typeof window !== "undefined" ? getFirebaseAuth() : (null as unknown as Auth);
