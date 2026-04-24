@@ -1,46 +1,15 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/contexts/auth-context";
 import { addMeasurement } from "@/lib/firestore";
 import { Measurement } from "@/lib/types";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, Save, Loader2, Sparkles, Copy, Check, ChevronDown, ChevronUp, ClipboardPaste } from "lucide-react";
+import { ArrowLeft, Save, Loader2, ImageUp, X, Check, ChevronDown, ChevronUp } from "lucide-react";
 import Link from "next/link";
 import { inputClass } from "@/lib/styles";
-
-const AI_PROMPT = `Extract the body composition data from this scale screenshot and return ONLY a valid JSON object — no explanation, no markdown, no code block.
-
-Use exactly these keys (all numbers, except date which is an ISO string like "2026-04-17T07:11:00"):
-
-{
-  "date": "YYYY-MM-DDTHH:MM:00",
-  "weight": 0,
-  "bmi": 0,
-  "fatPercent": 0,
-  "bodyFatWeight": 0,
-  "skeletalMuscleMassPercent": 0,
-  "skeletalMuscleWeight": 0,
-  "musclePercent": 0,
-  "muscleWeight": 0,
-  "vFat": 0,
-  "waterPercent": 0,
-  "weightOfWater": 0,
-  "metabolism": 0,
-  "obesityDegree": 0,
-  "boneMass": 0,
-  "protein": 0,
-  "weightWithoutFat": 0,
-  "bodyAge": 0,
-  "height": 0
-}
-
-Rules:
-- Fill in the date from the timestamp shown on the screenshot. If no date is visible, use today's date.
-- For any metric not visible in the screenshot, use 0.
-- Return only the raw JSON, nothing else.`;
 
 type FormData = Omit<Measurement, "id">;
 
@@ -58,25 +27,12 @@ function localTimeValue() {
 
 const EMPTY_FORM: FormData = {
   date: "",
-  weight: 0,
-  bmi: 0,
-  fatPercent: 0,
-  bodyFatWeight: 0,
-  skeletalMuscleMassPercent: 0,
-  skeletalMuscleWeight: 0,
-  musclePercent: 0,
-  muscleWeight: 0,
-  vFat: 0,
-  waterPercent: 0,
-  weightOfWater: 0,
-  metabolism: 0,
-  obesityDegree: 0,
-  boneMass: 0,
-  protein: 0,
-  weightWithoutFat: 0,
-  bodyAge: 0,
-  height: 0,
-  notes: "",
+  weight: 0, bmi: 0, fatPercent: 0, bodyFatWeight: 0,
+  skeletalMuscleMassPercent: 0, skeletalMuscleWeight: 0,
+  musclePercent: 0, muscleWeight: 0, vFat: 0,
+  waterPercent: 0, weightOfWater: 0, metabolism: 0,
+  obesityDegree: 0, boneMass: 0, protein: 0,
+  weightWithoutFat: 0, bodyAge: 0, height: 0, notes: "",
 };
 
 interface FieldConfig {
@@ -110,15 +66,20 @@ const FIELDS: FieldConfig[] = [
 export default function AddPage() {
   const { user } = useAuth();
   const router = useRouter();
-  const [form, setForm] = useState<FormData>(() => ({ ...EMPTY_FORM, date: `${localDateValue()}T${localTimeValue()}` }));
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const [form, setForm] = useState<FormData>(() => ({
+    ...EMPTY_FORM,
+    date: `${localDateValue()}T${localTimeValue()}`,
+  }));
   const [dateInput, setDateInput] = useState(localDateValue);
   const [timeInput, setTimeInput] = useState(localTimeValue);
   const [saving, setSaving] = useState(false);
   const [aiOpen, setAiOpen] = useState(false);
-  const [copied, setCopied] = useState(false);
-  const [jsonInput, setJsonInput] = useState("");
-  const [jsonError, setJsonError] = useState("");
+  const [extracting, setExtracting] = useState(false);
+  const [extractError, setExtractError] = useState("");
   const [applied, setApplied] = useState(false);
+  const [preview, setPreview] = useState<string | null>(null);
 
   const applyParsed = useCallback((parsed: Record<string, unknown>) => {
     const allowed = new Set<string>([
@@ -141,50 +102,81 @@ export default function AddPage() {
     setAiOpen(false);
   }, []);
 
+  // Global paste → auto-fill if it's measurement JSON
   useEffect(() => {
     const handler = (e: ClipboardEvent) => {
       const target = e.target as HTMLElement;
       if (target.tagName === "TEXTAREA" || target.tagName === "INPUT") return;
-      const text = (e.clipboardData?.getData("text") ?? "").replace(/[\u201C\u201D\u2018\u2019]/g, (c) => c === "\u2018" || c === "\u2019" ? "'" : '"');
+      const text = (e.clipboardData?.getData("text") ?? "").replace(/[“”‘’]/g, (c) => c === "‘" || c === "’" ? "'" : '"');
       try {
         const parsed = JSON.parse(text.trim());
         if (typeof parsed === "object" && parsed !== null && ("weight" in parsed || "date" in parsed)) {
           e.preventDefault();
           applyParsed(parsed);
         }
-      } catch { /* not JSON, ignore */ }
+      } catch { /* not JSON */ }
     };
     document.addEventListener("paste", handler);
     return () => document.removeEventListener("paste", handler);
   }, [applyParsed]);
 
-  const copyPrompt = async () => {
-    await navigator.clipboard.writeText(AI_PROMPT);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
-  };
-
-  const normalizeJson = (text: string) =>
-    text
-      .replace(/[\u200B-\u200D\uFEFF\u00AD]/g, "")
-      .trim()
-      .replace(/[\u201C\u201D\u2018\u2019]/g, (c) =>
-        c === "\u2018" || c === "\u2019" ? "'" : '"'
-      );
-
-  const applyJson = () => {
-    setJsonError("");
+  const handleImageFile = async (file: File) => {
+    if (!file.type.startsWith("image/")) return;
+    setExtractError("");
     setApplied(false);
+
+    const objectUrl = URL.createObjectURL(file);
+    setPreview(objectUrl);
+    setExtracting(true);
+
     try {
-      applyParsed(JSON.parse(normalizeJson(jsonInput)));
+      const base64 = await new Promise<string>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve((reader.result as string).split(",")[1]);
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+
+      const res = await fetch("/api/extract-measurement", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ imageBase64: base64, mimeType: file.type }),
+      });
+
+      const json = await res.json();
+      if (!res.ok || json.error) {
+        setExtractError(json.error ?? "Failed to extract data from image.");
+        return;
+      }
+
+      applyParsed(json.data);
     } catch {
-      setJsonError("Invalid JSON — paste only the raw JSON returned by the AI.");
+      setExtractError("Something went wrong. Try again.");
+    } finally {
+      setExtracting(false);
     }
   };
 
-  const set = (key: keyof FormData, value: string | number) => {
-    setForm((prev) => ({ ...prev, [key]: value }));
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleImageFile(file);
+    e.target.value = "";
   };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleImageFile(file);
+  };
+
+  const clearImage = () => {
+    setPreview(null);
+    setExtractError("");
+    setApplied(false);
+  };
+
+  const set = (key: keyof FormData, value: string | number) =>
+    setForm((prev) => ({ ...prev, [key]: value }));
 
   const setDate = (d: string) => {
     setDateInput(d);
@@ -224,10 +216,7 @@ export default function AddPage() {
         </div>
       </div>
 
-      <div className="text-xs text-muted-foreground px-1">
-        Tip: paste a JSON measurement object anywhere on this page to auto-fill the form.
-      </div>
-
+      {/* AI image import */}
       <div className="rounded-xl border border-dashed border-border/60 bg-muted/20">
         <button
           type="button"
@@ -235,9 +224,9 @@ export default function AddPage() {
           className="flex items-center justify-between w-full px-4 py-3 text-left rounded-xl hover:bg-muted/20 transition-colors"
         >
           <span className="flex items-center gap-2 text-sm font-medium">
-            <Sparkles className="h-4 w-4 text-primary" />
-            Import via AI
-            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">Optional</Badge>
+            <ImageUp className="h-4 w-4 text-primary" />
+            Import from scale photo
+            <Badge variant="secondary" className="text-[10px] px-1.5 py-0 h-4">AI</Badge>
           </span>
           {aiOpen
             ? <ChevronUp className="h-4 w-4 text-muted-foreground" />
@@ -247,33 +236,54 @@ export default function AddPage() {
         {aiOpen && (
           <div className="px-4 pb-4 space-y-3 border-t border-border/40 pt-3">
             <p className="text-xs text-muted-foreground">
-              Copy the prompt, paste into Claude or ChatGPT with your scale screenshot, then paste the JSON response below.
+              Upload a screenshot from your scale app. AI will extract all metrics automatically.
             </p>
-            <Button type="button" variant="outline" size="sm" onClick={copyPrompt} className="w-full gap-2 h-8 text-xs">
-              {copied ? <Check className="h-3.5 w-3.5 text-emerald-400" /> : <Copy className="h-3.5 w-3.5" />}
-              {copied ? "Prompt copied!" : "Copy AI prompt"}
-            </Button>
-            <div className="space-y-1.5">
-              <label className="text-xs text-muted-foreground">Paste JSON response</label>
-              <textarea
-                value={jsonInput}
-                onChange={(e) => { setJsonInput(e.target.value); setJsonError(""); setApplied(false); }}
-                placeholder={'{\n  "date": "2026-04-17T07:11:00",\n  "weight": 69.05,\n  ...\n}'}
-                rows={5}
-                className={`${inputClass} font-mono text-xs resize-none`}
-              />
-              {jsonError && <p className="text-xs text-red-400">{jsonError}</p>}
-            </div>
-            <Button
-              type="button"
-              size="sm"
-              className="w-full gap-2 h-8 text-xs"
-              onClick={applyJson}
-              disabled={!jsonInput.trim()}
-            >
-              <ClipboardPaste className="h-3.5 w-3.5" />
-              Apply to form
-            </Button>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleFileChange}
+            />
+
+            {!preview ? (
+              <div
+                onDrop={handleDrop}
+                onDragOver={(e) => e.preventDefault()}
+                onClick={() => fileInputRef.current?.click()}
+                className="flex flex-col items-center justify-center gap-2 rounded-lg border border-dashed border-border/60 bg-muted/10 py-8 cursor-pointer hover:bg-muted/20 transition-colors"
+              >
+                <ImageUp className="h-7 w-7 text-muted-foreground/60" />
+                <p className="text-xs text-muted-foreground text-center">
+                  Click or drag &amp; drop your scale screenshot
+                </p>
+              </div>
+            ) : (
+              <div className="relative rounded-lg overflow-hidden border border-border/60">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img src={preview} alt="Scale screenshot" className="w-full max-h-60 object-contain bg-muted/10" />
+                <button
+                  type="button"
+                  onClick={clearImage}
+                  className="absolute top-2 right-2 rounded-full bg-background/80 p-1 backdrop-blur-sm border border-border/60 hover:bg-muted transition-colors"
+                >
+                  <X className="h-3.5 w-3.5" />
+                </button>
+                {extracting && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-background/60 backdrop-blur-sm">
+                    <div className="flex items-center gap-2 text-sm font-medium">
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Reading data…
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {extractError && (
+              <p className="text-xs text-red-400">{extractError}</p>
+            )}
           </div>
         )}
       </div>
@@ -281,7 +291,7 @@ export default function AddPage() {
       {applied && (
         <div className="flex items-center gap-2 text-xs text-emerald-400 px-1">
           <Check className="h-3.5 w-3.5" />
-          Form filled from AI — review and save
+          Form filled from photo — review and save
         </div>
       )}
 

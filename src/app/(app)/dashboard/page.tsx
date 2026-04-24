@@ -8,12 +8,13 @@ import { WeightOverviewChart } from "@/components/charts/weight-overview-chart";
 import { MetricLineChart } from "@/components/charts/metric-line-chart";
 import { LatestStats } from "@/components/latest-stats";
 import { ComparisonPanel } from "@/components/comparison-panel";
+import { AiInsight } from "@/components/ai-insight";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import Link from "next/link";
-import { Plus, RefreshCw, Pencil, GitCompare, X } from "lucide-react";
+import { Plus, Pencil, GitCompare, X } from "lucide-react";
 import { format, parseISO } from "date-fns";
 
 export default function DashboardPage() {
@@ -142,15 +143,6 @@ export default function DashboardPage() {
             {latest ? format(parseISO(latest.date), "dd MMM yyyy · HH:mm") : "—"}
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="icon"
-          className="h-8 w-8"
-          onClick={fetchData}
-          title="Refresh data"
-        >
-          <RefreshCw className="h-3.5 w-3.5" />
-        </Button>
       </div>
 
       <Tabs defaultValue="overview" onValueChange={(v) => { if (v !== "history" && compareMode) { setCompareMode(false); setSelectedIds([]); setShowComparison(false); } }}>
@@ -161,6 +153,7 @@ export default function DashboardPage() {
         </TabsList>
 
         <TabsContent value="overview" className="space-y-5 mt-5">
+          <AiInsight measurements={measurements} />
           <WeightOverviewChart data={measurements} />
           {latest && <LatestStats current={latest} previous={previous} />}
         </TabsContent>
@@ -203,7 +196,6 @@ export default function DashboardPage() {
             <table className="w-full text-sm">
               <thead>
                 <tr className="border-b border-border/60">
-                  {compareMode && <th className="px-3 py-3 w-8" />}
                   <th className="px-4 py-3 text-left text-xs font-medium text-muted-foreground uppercase tracking-wider">Date</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Weight</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">BMI</th>
@@ -211,7 +203,7 @@ export default function DashboardPage() {
                   <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Muscle %</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Water %</th>
                   <th className="px-4 py-3 text-right text-xs font-medium text-muted-foreground uppercase tracking-wider">Body Age</th>
-                  {!compareMode && <th className="px-4 py-3 w-10" />}
+                  <th className="px-4 py-3 w-10" />
                 </tr>
               </thead>
               <tbody>
@@ -235,22 +227,6 @@ export default function DashboardPage() {
                             : "hover:bg-muted/20",
                       ].join(" ")}
                     >
-                      {compareMode && (
-                        <td className="px-3 py-3">
-                          <div className={[
-                            "h-4 w-4 rounded-sm border-2 flex items-center justify-center transition-colors",
-                            isSelected
-                              ? "bg-primary border-primary"
-                              : "border-border",
-                          ].join(" ")}>
-                            {isSelected && (
-                              <svg className="h-2.5 w-2.5 text-primary-foreground" fill="none" viewBox="0 0 12 12">
-                                <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            )}
-                          </div>
-                        </td>
-                      )}
                       <td className="px-4 py-3 text-xs text-muted-foreground whitespace-nowrap font-data">
                         {dateStr}
                       </td>
@@ -260,8 +236,19 @@ export default function DashboardPage() {
                       <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{fmtVal("musclePercent", m.musclePercent)}%</td>
                       <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{fmtVal("waterPercent", m.waterPercent)}%</td>
                       <td className="px-4 py-3 text-right font-data text-xs text-muted-foreground">{fmtVal("bodyAge", m.bodyAge)}<span className="text-[10px] text-muted-foreground/60 ml-0.5 font-sans">yr</span></td>
-                      {!compareMode && (
-                        <td className="px-4 py-3 text-right">
+                      <td className="px-4 py-3 text-right">
+                        {compareMode ? (
+                          <div className={[
+                            "h-4 w-4 rounded-sm border-2 flex items-center justify-center transition-colors ml-auto",
+                            isSelected ? "bg-primary border-primary" : "border-border",
+                          ].join(" ")}>
+                            {isSelected && (
+                              <svg className="h-2.5 w-2.5 text-primary-foreground" fill="none" viewBox="0 0 12 12">
+                                <path d="M2 6l3 3 5-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            )}
+                          </div>
+                        ) : (
                           <Link
                             href={`/edit?id=${m.id}`}
                             className={buttonVariants({ variant: "ghost", size: "icon" }) + " h-7 w-7"}
@@ -269,8 +256,8 @@ export default function DashboardPage() {
                           >
                             <Pencil className="h-3 w-3" />
                           </Link>
-                        </td>
-                      )}
+                        )}
+                      </td>
                     </tr>
                   );
                 })}
