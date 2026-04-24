@@ -177,8 +177,13 @@ export default function AddPage() {
       }
 
       applyParsed(parsed);
-    } catch {
-      setExtractError("Something went wrong. Try again.");
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "";
+      if (msg.includes("429") || msg.toLowerCase().includes("quota") || msg.toLowerCase().includes("rate")) {
+        setExtractError("Too many requests — please try again later.");
+      } else {
+        setExtractError("Something went wrong. Try again.");
+      }
     } finally {
       setExtracting(false);
     }
