@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { ArrowUp } from "lucide-react";
+import { RotateCw } from "lucide-react";
 
 export function PWARegister() {
   const [waitingSW, setWaitingSW] = useState<ServiceWorker | null>(null);
@@ -97,7 +97,7 @@ export function PWARegister() {
             letterSpacing: "-0.01em",
           }}
         >
-          <ArrowUp className="h-3 w-3" strokeWidth={2.5} />
+          <RotateCw className="h-3 w-3" strokeWidth={2.5} />
           Refresh
         </button>
 
