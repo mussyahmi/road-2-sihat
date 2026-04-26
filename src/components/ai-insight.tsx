@@ -236,12 +236,13 @@ export function AiInsight({ measurements }: AiInsightProps) {
         }
         .goal-tag { animation: goalPop 0.25s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; }
 
-        .next-steps-divider {
-          height: 1px;
-          background: linear-gradient(90deg, oklch(0.62 0.155 75 / 15%), oklch(0.62 0.155 75 / 5%) 80%, transparent);
+        .insight-col-divider {
+          width: 1px;
+          background: linear-gradient(180deg, transparent, oklch(0.62 0.155 75 / 18%) 20%, oklch(0.62 0.155 75 / 12%) 80%, transparent);
+          flex-shrink: 0;
         }
-        :is(.dark *) .next-steps-divider {
-          background: linear-gradient(90deg, oklch(0.62 0.155 75 / 20%), oklch(0.62 0.155 75 / 5%) 80%, transparent);
+        :is(.dark *) .insight-col-divider {
+          background: linear-gradient(180deg, transparent, oklch(0.62 0.155 75 / 22%) 20%, oklch(0.62 0.155 75 / 14%) 80%, transparent);
         }
         @keyframes chipSlideIn {
           from { opacity: 0; transform: translateX(-6px); }
@@ -348,16 +349,23 @@ export function AiInsight({ measurements }: AiInsightProps) {
       {/* Insight body */}
       <div className="relative z-10">
         {loading ? (
-          <div className="space-y-2 py-0.5">
-            <div className="insight-skeleton h-3 w-full" />
-            <div className="insight-skeleton h-3 w-[80%]" />
-            <div className="insight-skeleton h-3 w-[55%]" />
-            {/* Skeleton chips */}
-            <div className="pt-2 space-y-1.5">
-              <div className="insight-skeleton h-2.5 w-24 rounded-full" />
-              <div className="insight-skeleton h-6 w-[70%] rounded-lg" />
-              <div className="insight-skeleton h-6 w-[60%] rounded-lg" />
-              <div className="insight-skeleton h-6 w-[50%] rounded-lg" />
+          <div className="flex flex-col sm:flex-row sm:items-stretch gap-3 sm:gap-5">
+            {/* Left skeleton: insight lines */}
+            <div className="flex-1 space-y-2 py-0.5">
+              <div className="insight-skeleton h-3 w-full" />
+              <div className="insight-skeleton h-3 w-[85%]" />
+              <div className="insight-skeleton h-3 w-[70%]" />
+              <div className="insight-skeleton h-3 w-[50%]" />
+            </div>
+            {/* Divider */}
+            <div className="hidden sm:block insight-col-divider" />
+            {/* Right skeleton: chip placeholders */}
+            <div className="hidden sm:flex flex-col gap-1.5 py-0.5 sm:w-[38%]">
+              <div className="insight-skeleton h-2.5 w-12 rounded-full" />
+              <div className="insight-skeleton h-6 w-full rounded-lg" />
+              <div className="insight-skeleton h-6 w-[90%] rounded-lg" />
+              <div className="insight-skeleton h-2.5 w-14 rounded-full mt-1" />
+              <div className="insight-skeleton h-6 w-full rounded-lg" />
             </div>
           </div>
         ) : error === "rate-limited" ? (
@@ -365,50 +373,73 @@ export function AiInsight({ measurements }: AiInsightProps) {
         ) : error ? (
           <p className="text-xs text-red-400">{error}</p>
         ) : data ? (
-          <div className={`space-y-3 ${visible ? "insight-enter" : "opacity-0"}`}>
-            <p className="text-sm leading-relaxed text-foreground/85">
-              {data.insight}
-            </p>
-
-            {hasList && (
-              <>
-                <div className="next-steps-divider" />
-
-                <div className="space-y-1.5">
-                  <span
-                    className="block text-[9px] font-bold uppercase tracking-[0.14em] mb-2"
-                    style={{ color: "oklch(0.62 0.155 75 / 60%)" }}
-                  >
-                    Next steps
-                  </span>
-
-                  {data.dos.map((item, i) => (
-                    <div
-                      key={`do-${i}`}
-                      className="chip-do flex items-start gap-2 rounded-lg px-3 py-1.5"
-                      style={{
-                        animation: `chipSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) ${0.08 * i}s both`,
-                      }}
-                    >
-                      <CheckCircle2 className="chip-do-icon h-3.5 w-3.5 mt-0.5 shrink-0" />
-                      <span className="text-xs leading-snug">{item}</span>
-                    </div>
-                  ))}
-
-                  {data.donts.map((item, i) => (
-                    <div
-                      key={`dont-${i}`}
-                      className="chip-dont flex items-start gap-2 rounded-lg px-3 py-1.5"
-                      style={{
-                        animation: `chipSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) ${0.08 * (data.dos.length + i)}s both`,
-                      }}
-                    >
-                      <XCircle className="chip-dont-icon h-3.5 w-3.5 mt-0.5 shrink-0" />
-                      <span className="text-xs leading-snug">{item}</span>
-                    </div>
-                  ))}
+          <div className={`${visible ? "insight-enter" : "opacity-0"}`}>
+            {hasList ? (
+              /* Two-column on sm+, stacked on mobile */
+              <div className="flex flex-col sm:flex-row sm:items-stretch gap-3 sm:gap-5">
+                {/* Left / top: insight text */}
+                <div className="flex-1 min-w-0 sm:flex sm:items-center">
+                  <p className="text-[15px] leading-relaxed text-foreground/85">
+                    {data.insight}
+                  </p>
                 </div>
-              </>
+
+                <div className="hidden sm:block insight-col-divider" />
+
+                {/* Right / bottom: dos & donts */}
+                <div className="flex flex-col gap-1.5 sm:w-[38%]">
+                  {data.dos.length > 0 && (
+                    <>
+                      <span
+                        className="block text-[10px] font-bold uppercase tracking-[0.14em] mb-0.5"
+                        style={{ color: "oklch(0.50 0.14 145 / 70%)" }}
+                      >
+                        Do
+                      </span>
+                      {data.dos.map((item, i) => (
+                        <div
+                          key={`do-${i}`}
+                          className="chip-do flex items-start gap-2 rounded-lg px-3 py-1.5"
+                          style={{
+                            animation: `chipSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) ${0.08 * i}s both`,
+                          }}
+                        >
+                          <CheckCircle2 className="chip-do-icon h-3.5 w-3.5 mt-0.5 shrink-0" />
+                          <span className="text-xs leading-snug">{item}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+
+                  {data.donts.length > 0 && (
+                    <>
+                      <span
+                        className="block text-[10px] font-bold uppercase tracking-[0.14em] mt-2 mb-0.5"
+                        style={{ color: "oklch(0.55 0.14 25 / 65%)" }}
+                      >
+                        Don&apos;t
+                      </span>
+                      {data.donts.map((item, i) => (
+                        <div
+                          key={`dont-${i}`}
+                          className="chip-dont flex items-start gap-2 rounded-lg px-3 py-1.5"
+                          style={{
+                            animation: `chipSlideIn 0.35s cubic-bezier(0.22, 1, 0.36, 1) ${0.08 * (data.dos.length + i)}s both`,
+                          }}
+                        >
+                          <XCircle className="chip-dont-icon h-3.5 w-3.5 mt-0.5 shrink-0" />
+                          <span className="text-xs leading-snug">{item}</span>
+                        </div>
+                      ))}
+                    </>
+                  )}
+                </div>
+              </div>
+            ) : (
+              /* No list: single column */
+              <p className="text-[15px] leading-relaxed text-foreground/85">
+                {data.insight}
+              </p>
             )}
           </div>
         ) : null}
